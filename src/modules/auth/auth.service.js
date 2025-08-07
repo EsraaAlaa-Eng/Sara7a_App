@@ -88,6 +88,7 @@ export const signupWithGmail = asyncHandler(
     async (req, res, next) => {
         const { idToken } = req.body;
         const { picture, name, email, email_verified } = await verifyGoogleAccount({ idToken })
+        console.log({picture, name, email, email_verified});
 
         if (!email_verified) {
             return next(new Error("not verified account ", { cause: 400 }))
@@ -116,7 +117,6 @@ export const signupWithGmail = asyncHandler(
             model: userModel,
             data: [{
                 fullName: name,
-
                 email,
                 picture,
                 confirmEmail: Date.now(),
@@ -124,11 +124,13 @@ export const signupWithGmail = asyncHandler(
             }]
 
         })
-        console.log(JSON.stringify(newUser, null, 2));
+        console.log({newUser});
+        
+        // console.log(JSON.stringify(newUser, null, 2));
 
         const credentials = await generateLoginCredentials({ user: newUser })
 
-        return successResponse({ res, status: 201, data: { newUser } });
+        return successResponse({ res, status: 201, data: { credentials } });
 
 
 
