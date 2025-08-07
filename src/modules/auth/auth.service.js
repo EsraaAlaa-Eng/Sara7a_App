@@ -6,6 +6,7 @@ import { hashPassword, comparePassword } from "../../utils/security/hash.securit
 import jwt from 'jsonwebtoken';
 import { generateLoginCredentials, generateToken, getSignatures, signatureLevelEnum } from "../../utils/security/token.security.js";
 import { OAuth2Client } from 'google-auth-library';
+import { emailEvent } from "../../utils/event/email.event.js";
 
 
 
@@ -33,6 +34,7 @@ export const signup = asyncHandler(async (req, res, next) => {
             phone: encryptedPhone
         }]
     });
+    emailEvent.emit("confirmEmail", { to: email, otp: Date.now() })
 
     return successResponse({ res, status: 201, data: { user } });
 });
