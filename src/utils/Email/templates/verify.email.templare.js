@@ -1,5 +1,5 @@
-export const verifyEmailTemplate =(otp,title ="confirm Email")=>{
-     `<!DOCTYPE html>
+export const verifyEmailTemplate = (otp, title = "confirm Email") => {
+    `<!DOCTYPE html>
                 <html>
                 <head>
                     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"></head>
@@ -34,7 +34,7 @@ export const verifyEmailTemplate =(otp,title ="confirm Email")=>{
                 </tr>
                 <tr>
                 <td>
-                <h1 style="padding-top:25px; color:#630E2B">${title}</h1>
+                <h1 style="padding-top:25px; color:#630E2B">${title}</h1>   
                 </td>
                 </tr>
                 <tr>
@@ -82,5 +82,5 @@ export const verifyEmailTemplate =(otp,title ="confirm Email")=>{
                 </tr>
                 </table>
                 </body>
-                </html>` 
+                </html>`
 }

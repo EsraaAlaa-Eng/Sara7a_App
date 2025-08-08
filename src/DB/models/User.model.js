@@ -48,6 +48,7 @@ const userSchema = new mongoose.Schema({
     },
     provider: { type: String, enum: Object.values(providerEnum), default: providerEnum.system },
     confirmEmail: Date,
+    confirmEmailOtp: String,
     picture: String,
 }, {
     timestamps: true,
@@ -55,13 +56,13 @@ const userSchema = new mongoose.Schema({
     toJSON: { virtuals: true },
 })
 userSchema.virtual("fullName")
-.set(function (value) {
-    const [firstName, lastName] = value?.split(" ") || [];
-    this.set({ firstName, lastName })
-})
-.get(function () {
-    return this.firstName + " " + this.lastName;
-})
+    .set(function (value) {
+        const [firstName, lastName] = value?.split(" ") || [];
+        this.set({ firstName, lastName })
+    })
+    .get(function () {
+        return this.firstName + " " + this.lastName;
+    })
 
 // safety! cheka 
 export const userModel = mongoose.models.User || mongoose.model("User", userSchema)

@@ -38,7 +38,7 @@ export async function sendEmail({
         to, cc, bcc, text, html, subject, attachments
     })
 
-    console.log( "Send mail Done ",info.messageId);
+    console.log( "Send mail Successful🍀 ",info.messageId);
 
 
 }

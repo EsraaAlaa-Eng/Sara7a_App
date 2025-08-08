@@ -2,11 +2,12 @@ import { providerEnum, roleEnum, userModel } from "../../DB/models/User.model.js
 import { asyncHandler, successResponse } from "../../utils/response.js";
 import * as DBservice from '../../DB/db.service.js';
 import { generateEncryption } from "../../utils/security/encryption.security.js";
-import { hashPassword, comparePassword } from "../../utils/security/hash.security.js";
+import { generateHash, comparePassword } from "../../utils/security/hash.security.js";
 import jwt from 'jsonwebtoken';
 import { generateLoginCredentials, generateToken, getSignatures, signatureLevelEnum } from "../../utils/security/token.security.js";
 import { OAuth2Client } from 'google-auth-library';
 import { emailEvent } from "../../utils/event/email.event.js";
+import { customAlphabet } from 'nanoid';
 
 
 
@@ -22,8 +23,11 @@ export const signup = asyncHandler(async (req, res, next) => {
         return next(new Error("Email already exists"), { cause: 409 });
     }
 
-    const hashedPassword = await hashPassword({ plaintext: password });
+    const hashedPassword = await generateHash({ plaintext: password });
     const encryptedPhone = await generateEncryption({ plaintext: phone })
+    // Before save user in DB
+    const otp = customAlphabet("123456789", 6)()  //alphabet: string, defaultSize?: number
+    const confirmEmailOtp = await generateHash({ plaintext: otp })
 
     const user = await DBservice.create({
         model: userModel,
@@ -31,10 +35,11 @@ export const signup = asyncHandler(async (req, res, next) => {
             fullName,
             email,
             password: hashedPassword,
-            phone: encryptedPhone
+            phone: encryptedPhone,
+            confirmEmailOtp,
         }]
     });
-    emailEvent.emit("confirmEmail", { to: email, otp: Date.now() })
+    emailEvent.emit("confirmEmail", { to: email, otp: otp })
 
     return successResponse({ res, status: 201, data: { user } });
 });
@@ -49,9 +54,12 @@ export const login = asyncHandler(async (req, res, next) => {
 
 
 
-    if (!user) return next(new Error("Invalid email or password"));
-    console.log(user);
+    if (!user) return next(new Error("Invalid email or password"), { cause: 404 });
+    // console.log(user);
 
+    if (!user.confirmEmail) {
+        return next("pleas verify your otp account first")
+    }
 
     if (!await comparePassword({ plaintext: password, hashedPassword: user.password })) {
         return next(new Error("In-valid login Data", { cause: 401 }));
@@ -88,7 +96,7 @@ export const signupWithGmail = asyncHandler(
     async (req, res, next) => {
         const { idToken } = req.body;
         const { picture, name, email, email_verified } = await verifyGoogleAccount({ idToken })
-        console.log({picture, name, email, email_verified});
+        console.log({ picture, name, email, email_verified });
 
         if (!email_verified) {
             return next(new Error("not verified account ", { cause: 400 }))
@@ -124,8 +132,8 @@ export const signupWithGmail = asyncHandler(
             }]
 
         })
-        console.log({newUser});
-        
+        console.log({ newUser });
+
         // console.log(JSON.stringify(newUser, null, 2));
 
         const credentials = await generateLoginCredentials({ user: newUser })
