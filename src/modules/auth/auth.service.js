@@ -15,11 +15,8 @@ export const signup = asyncHandler(async (req, res, next) => {
     const { fullName, email, password, phone } = req.body;
     console.log({ fullName, email, password, phone });
 
-    const existingUser = await DBservice.findOne({
-        model: userModel,
-        filter: { email }
-    });
-    if (existingUser) {
+  
+    if (await DBservice.findOne({ model: userModel,filter: { email }})) {
         return next(new Error("Email already exists"), { cause: 409 });
     }
 
@@ -58,7 +55,7 @@ export const login = asyncHandler(async (req, res, next) => {
     // console.log(user);
 
     if (!user.confirmEmail) {
-        return next("pleas verify your otp account first")
+        return next(new Error("pleas verify your account first",{ cause: 400 }))
     }
 
     if (!await comparePassword({ plaintext: password, hashedPassword: user.password })) {
