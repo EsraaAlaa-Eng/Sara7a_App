@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { sendEmail } from '../Email/send.email.js'
-import { verifyEmailTemplate } from '../Email/templates/verify.email.templare.js';
+import {verifyEmailTemplate} from '../Email/templates/verify.email.template.js'
 export const emailEvent = new EventEmitter()
 
 emailEvent.on("confirmEmail", async (data) => {
