@@ -17,3 +17,8 @@ export const find = async ({ model, filter = {}, select = "", populate = [] } = 
 export const create = async ({ model, data = [{}], option = { validateBeforeSave: true } }) => {
     return await model.create(data, option)
 }
+
+
+export const updateOne = async ({ model, filter = {}, data ={} ,option = { runValidators: true}}) => {
+    return await model.updateOne(filter, data , option)
+}

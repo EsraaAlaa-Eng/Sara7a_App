@@ -2,7 +2,7 @@ import { providerEnum, roleEnum, userModel } from "../../DB/models/User.model.js
 import { asyncHandler, successResponse } from "../../utils/response.js";
 import * as DBservice from '../../DB/db.service.js';
 import { generateEncryption } from "../../utils/security/encryption.security.js";
-import { generateHash, comparePassword } from "../../utils/security/hash.security.js";
+import { generateHash, compareHash } from "../../utils/security/hash.security.js";
 import jwt from 'jsonwebtoken';
 import { generateLoginCredentials, generateToken, getSignatures, signatureLevelEnum } from "../../utils/security/token.security.js";
 import { OAuth2Client } from 'google-auth-library';
@@ -15,8 +15,8 @@ export const signup = asyncHandler(async (req, res, next) => {
     const { fullName, email, password, phone } = req.body;
     console.log({ fullName, email, password, phone });
 
-  
-    if (await DBservice.findOne({ model: userModel,filter: { email }})) {
+
+    if (await DBservice.findOne({ model: userModel, filter: { email } })) {
         return next(new Error("Email already exists"), { cause: 409 });
     }
 
@@ -41,6 +41,48 @@ export const signup = asyncHandler(async (req, res, next) => {
     return successResponse({ res, status: 201, data: { user } });
 });
 
+
+
+export const confirmEmail = asyncHandler(async (req, res, next) => {
+    const { email, otp } = req.body;
+    const user = await DBservice.findOne({
+        model: userModel,
+        filter: {
+            email,
+            confirmEmail: { $exists: false },
+            confirmEmailOtp: { $exists: true }
+        }
+
+    })
+
+    if (!user) {
+        return next(new Error("In-valid account or already verified", { cause: 404 }))
+    }
+    if (!await compareHash({ plaintext: otp, hashValue: user.confirmEmailOtp })) {
+        return next(new Error("In-valid OTP"))
+    }
+    const updateUser = await DBservice.updateOne({
+        model: userModel,
+        filter: { email },
+        data: {
+            $set: { confirmEmail: Date.now() },
+            $unset: { confirmEmailOtp: true },
+            $inc: { __v: 1 }
+        }
+
+    });
+    console.log('updateUser:', updateUser);
+
+    return updateUser.matchCount ? successResponse({ res, status: 200, data: {} })
+        : next(new Error("fail to confirm user email"))
+
+});
+
+
+
+
+
+
 export const login = asyncHandler(async (req, res, next) => {
 
     const { email, password } = req.body;
@@ -55,10 +97,10 @@ export const login = asyncHandler(async (req, res, next) => {
     // console.log(user);
 
     if (!user.confirmEmail) {
-        return next(new Error("pleas verify your account first",{ cause: 400 }))
+        return next(new Error("pleas verify your account first", { cause: 400 }))
     }
 
-    if (!await comparePassword({ plaintext: password, hashedPassword: user.password })) {
+    if (!await compareHash({ plaintext: password, hashValue: user.password })) {
         return next(new Error("In-valid login Data", { cause: 401 }));
 
     }
