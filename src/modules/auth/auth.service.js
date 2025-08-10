@@ -65,8 +65,8 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
         model: userModel,
         filter: {
             email,
-            confirmEmail: { $exists: false },
-            confirmEmailOtp: { $exists: true }
+            confirmEmail: { $exists: true },
+            confirmEmailOtp: { $exists: false }
         }
 
     })

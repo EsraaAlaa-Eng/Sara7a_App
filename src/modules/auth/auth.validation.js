@@ -1,23 +1,49 @@
 import joi from "joi";
+import { generalFields } from '../../middleware/validation.middleware.js'
+import { IdTokenClient } from "google-auth-library";
 
 
+export const login = {
+    body: joi.object().keys({
+        email: generalFields.email.required(),
+        password: generalFields.password.required(),
+    }).required(),
+}
 
-export const login = joi.object().keys({
-    email: joi.string().email({ minDomainSegments: 2, maxDomainSegments: 3, tlds: { allow: ['net', 'com', 'edu'] } }).required(),
-     password:joi.string().pattern(new RegExp(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)).required(),
-}).required()
 
-
-
-export const signup = login .append({
-    fullName: joi.string().min(2).max(20).required().messages({
-        "string.min": "min name length is 2 char ",
-        "any.require": "fullName is mandatory ",
+export const signup = {
+    body: login.body.append({
+        fullName: generalFields.fullName.required(),
+        phone: generalFields.phone.required(),
+        confirmPassword: generalFields.confirmPassword.required(),
     }),
-    phone:joi.string().pattern(new RegExp (/^(002|\+2)?01[0125][0-9]{8}$/)).required(),
-    confirmPassword:joi.string().valid(joi.ref("password")).required(),
-}).required()
 
+    query: joi.object().keys({
+        lang: joi.string().valid("ar", "en").required(),
+    }).required(),
+
+}
+
+
+export const confirmEmail = {
+    body: joi.object().keys({
+        email: generalFields.email.required(),
+        otp: generalFields.otp.required(),
+
+    }),
+
+
+}
+
+
+
+export const loginWithGmail = {
+    body: joi.object().keys({
+        IdToken: joi.string().required(),
+
+    }),
+
+}
 
 
 

@@ -1,15 +1,47 @@
+import joi  from "joi";
 import { asyncHandler } from "../utils/response.js"
+
+export const generalFields = {
+
+    fullName: joi.string().min(2).max(20).messages({
+        "string.min": "min name length is 2 char ",
+        "any.require": "fullName is mandatory ",
+    }),
+
+    email: joi.string().email({ minDomainSegments: 2, maxDomainSegments: 3, tlds: { allow: ['net', 'com', 'edu'] } }),
+    password: joi.string().pattern(new RegExp(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)),
+    confirmPassword: joi.string().valid(joi.ref("password")),
+    phone: joi.string().pattern(new RegExp(/^(002|\+2)?01[0125][0-9]{8}$/)),
+    otp:joi.string().pattern(new RegExp(/^\d{6}$/))
+
+}
+
 
 export const validation = (scheme) => {
     return asyncHandler(
         async (req, res, next) => {
+            console.log(scheme);
+            console.log(Object.keys(scheme));
+            const validationError = []
+            for (const key of Object.keys(scheme)) {
+
+                const validationResult = scheme[key].validate(req[key], { abortEarly: false })
+                if (validationResult.error) {
+                    validationError.push({
+                        key, details: validationResult.error.details.map(ele => {
+                            return { message: ele.message, path: ele.path[0] }
+                        })
+                    })
+                }
 
 
-            const validationResult = scheme.validate(req.body, { abortEarly: false })
-            if (validationResult.error) {
-                return res.status(400).json({ error_message: "validation error", validationResult })
+
 
             }
+            if (validationError.length) { //length validationError >0 than have problem
+                return res.status(400).json({ error_message: "validation error", validationError })
+            }
+
             return next()
         }
     )

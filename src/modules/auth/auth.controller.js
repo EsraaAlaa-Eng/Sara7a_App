@@ -7,10 +7,8 @@ const router = Router();
 router.post("/signup",validation(validators.signup),authService.signup);
 router.post("/login", validation(validators.login),authService.login);
 router.post('/refresh-token',authService.refreshToken);
-router.patch('/confirm-email',authService.confirmEmail);
-
-
-router.post("/signup/gmail", authService.signupWithGmail);
+router.patch('/confirm-email',validation(validators.confirmEmail),authService.confirmEmail);
+router.post("/signup/gmail", validation(validators.loginWithGmail),authService.signupWithGmail);
 // router.patch("/updatePassword", authService.updatePassword); 
 
 export default router;
