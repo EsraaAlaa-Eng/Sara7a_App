@@ -8,11 +8,22 @@ import { generateLoginCredentials, generateToken, getSignatures, signatureLevelE
 import { OAuth2Client } from 'google-auth-library';
 import { emailEvent } from "../../utils/event/email.event.js";
 import { customAlphabet } from 'nanoid';
+// import * as validators from './auth.validation.js'
 
 
 
 export const signup = asyncHandler(async (req, res, next) => {
+
+    // const validationResult = validators.signup.validate(req.body, { abortEarly: false })
+
+    // return res.json({ validationResult })
+    // if (validationResult.error) {
+    //     return res.status(400).json({ validationResult })
+
+    // }
+
     const { fullName, email, password, phone } = req.body;
+
     console.log({ fullName, email, password, phone });
 
 
@@ -40,6 +51,11 @@ export const signup = asyncHandler(async (req, res, next) => {
 
     return successResponse({ res, status: 201, data: { user } });
 });
+
+
+
+
+
 
 
 
@@ -85,7 +101,16 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
 
 export const login = asyncHandler(async (req, res, next) => {
 
+//  const validationResult = validators.login.validate(req.body, { abortEarly: false })
+
+//     return res.json({ validationResult })
+//     if (validationResult.error) {
+//         return res.status(400).json({ validationResult })
+
+//     }
+
     const { email, password } = req.body;
+
     const user = await DBservice.findOne({
         model: userModel,
         filter: { email, provider: providerEnum.system },
