@@ -46,9 +46,23 @@ const userSchema = new mongoose.Schema({
         enum: Object.values(roleEnum),
         default: roleEnum.user
     },
+
+
+
+
     provider: { type: String, enum: Object.values(providerEnum), default: providerEnum.system },
     confirmEmail: Date,
     confirmEmailOtp: String,
+
+    failedConfirmEmailAttempts: {
+        type: Number,
+        default: 0
+    },
+    confirmEmailBanUntil: {
+        type: Date,
+        default: null
+    },
+
     picture: String,
 }, {
     timestamps: true,

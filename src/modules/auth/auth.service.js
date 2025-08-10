@@ -100,13 +100,12 @@ export const signup = asyncHandler(async (req, res, next) => {
 export const confirmEmail = asyncHandler(async (req, res, next) => {
   const { email, otp } = req.body;
 
- 
   const user = await DBservice.findOne({
     model: userModel,
     filter: {
       email,
       confirmEmail: { $exists: false },  
-      confirmEmailOtp: { $exists: true } 
+      confirmEmailOtp: { $exists: true }
     }
   });
 
@@ -114,6 +113,17 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
     return next(new Error("Invalid account or already verified", { cause: 404 }));
   }
 
+  if (user.confirmEmailBanUntil && user.confirmEmailBanUntil > new Date()) {
+    const remainingMs = user.confirmEmailBanUntil - new Date();
+    const remainingSec = Math.ceil(remainingMs / 1000);
+    return next(new Error(`You are temporarily banned. Try again after ${remainingSec} seconds.`));
+  }
+
+  if (user.confirmEmailBanUntil && user.confirmEmailBanUntil <= new Date()) {
+    user.failedConfirmEmailAttempts = 0;
+    user.confirmEmailBanUntil = null;
+    await user.save();
+  }
 
   const isOtpValid = await compareHash({
     plaintext: otp,
@@ -121,31 +131,32 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
   });
 
   if (!isOtpValid) {
+    // زيادة العداد
+    user.failedConfirmEmailAttempts += 1;
+
+    // لو وصل 5، نحظر 5 دقايق
+    if (user.failedConfirmEmailAttempts >= 5) {
+      user.confirmEmailBanUntil = new Date(Date.now() + 5 * 60 * 1000); // 5 دقائق
+    }
+
+    await user.save();
     return next(new Error("Invalid OTP"));
   }
 
 
-  const updateResult = await DBservice.updateOne({
-    model: userModel,
-    filter: { email },
-    data: {
-      $set: { confirmEmail: new Date() }, 
-      $unset: { confirmEmailOtp: "" }, 
-      $inc: { __v: 1 } 
-    }
-  });
+  user.failedConfirmEmailAttempts = 0;
+  user.confirmEmailBanUntil = null;
+  user.confirmEmail = new Date();
+  user.confirmEmailOtp = undefined;
 
- 
-  if (updateResult.modifiedCount > 0) {
-    return successResponse({
-      res,
-      status: 200,
-      message: "Email confirmed successfully",
-      data: {}
-    });
-  } else {
-    return next(new Error("Failed to confirm user email"));
-  }
+  await user.save();
+
+  return successResponse({
+    res,
+    status: 200,
+    message: "Email confirmed successfully",
+    data: {}
+  });
 });
 
 
