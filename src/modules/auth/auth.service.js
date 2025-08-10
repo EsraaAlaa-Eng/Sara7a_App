@@ -59,42 +59,94 @@ export const signup = asyncHandler(async (req, res, next) => {
 
 
 
+// export const confirmEmail = asyncHandler(async (req, res, next) => {
+//     const { email, otp } = req.body;
+//     const user = await DBservice.findOne({
+//         model: userModel,
+//         filter: {
+//             email,
+//             confirmEmail: { $exists: false },
+//             confirmEmailOtp: { $exists: true }
+//         }
+
+//     })
+
+//     if (!user) {
+//         return next(new Error("In-valid account or already verified", { cause: 404 }))
+//     }
+
+//     if (!await compareHash({ plaintext: otp, hashValue: user.confirmEmailOtp })) {
+//         return next(new Error("In-valid OTP"))
+//     }
+
+//     const updateUser = await DBservice.updateOne({
+//         model: userModel,
+//         filter: { email },
+//         data: {
+//             $set: { confirmEmail: Date.now() },
+//             $unset: { confirmEmailOtp: true },
+//             $inc: { __v: 1 }
+//         }
+
+//     });
+//     console.log('updateUser:', updateUser);
+
+//     return updateUser.matchCount ? successResponse({ res, status: 200, data: {} })
+//         : next(new Error("fail to confirm user email"))
+
+// });
+
+
 export const confirmEmail = asyncHandler(async (req, res, next) => {
-    const { email, otp } = req.body;
-    const user = await DBservice.findOne({
-        model: userModel,
-        filter: {
-            email,
-            confirmEmail: { $exists: true },
-            confirmEmailOtp: { $exists: false }
-        }
+  const { email, otp } = req.body;
 
-    })
-
-    if (!user) {
-        return next(new Error("In-valid account or already verified", { cause: 404 }))
+ 
+  const user = await DBservice.findOne({
+    model: userModel,
+    filter: {
+      email,
+      confirmEmail: { $exists: false },  
+      confirmEmailOtp: { $exists: true } 
     }
-    if (!await compareHash({ plaintext: otp, hashValue: user.confirmEmailOtp })) {
-        return next(new Error("In-valid OTP"))
-    }
-    const updateUser = await DBservice.updateOne({
-        model: userModel,
-        filter: { email },
-        data: {
-            $set: { confirmEmail: Date.now() },
-            $unset: { confirmEmailOtp: true },
-            $inc: { __v: 1 }
-        }
+  });
 
+  if (!user) {
+    return next(new Error("Invalid account or already verified", { cause: 404 }));
+  }
+
+
+  const isOtpValid = await compareHash({
+    plaintext: otp,
+    hashValue: user.confirmEmailOtp
+  });
+
+  if (!isOtpValid) {
+    return next(new Error("Invalid OTP"));
+  }
+
+
+  const updateResult = await DBservice.updateOne({
+    model: userModel,
+    filter: { email },
+    data: {
+      $set: { confirmEmail: new Date() }, 
+      $unset: { confirmEmailOtp: "" }, 
+      $inc: { __v: 1 } 
+    }
+  });
+
+ 
+  if (updateResult.modifiedCount > 0) {
+    return successResponse({
+      res,
+      status: 200,
+      message: "Email confirmed successfully",
+      data: {}
     });
-    console.log('updateUser:', updateUser);
-
-    return updateUser.matchCount ? successResponse({ res, status: 200, data: {} })
-        : next(new Error("fail to confirm user email"))
-
+  } else {
+    return next(new Error("Failed to confirm user email"));
+  }
 });
-
-
 
 
 
