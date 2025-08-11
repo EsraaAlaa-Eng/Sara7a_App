@@ -9,6 +9,8 @@ import { roleEnum } from "../../DB/models/User.model.js";
 const userRouter = Router();
 
 userRouter.get("/", auth({ accessRoles: endPoint.Profile }), userService.Profile);
+userRouter.get("/:userId", userService.shareProfile);
+
 userRouter.get("/refresh-token", authentication({ tokenType: tokenTypeEnum.refresh }), userService.getNewLoginCredentials);
 
 

@@ -1,4 +1,4 @@
-import joi  from "joi";
+import joi from "joi";
 import { asyncHandler } from "../utils/response.js"
 
 export const generalFields = {
@@ -12,9 +12,16 @@ export const generalFields = {
     password: joi.string().pattern(new RegExp(/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[a-zA-Z]).{8,}$/)),
     confirmPassword: joi.string().valid(joi.ref("password")),
     phone: joi.string().pattern(new RegExp(/^(002|\+2)?01[0125][0-9]{8}$/)),
-    otp:joi.string().pattern(new RegExp(/^\d{6}$/))
+    otp: joi.string().pattern(new RegExp(/^\d{6}$/)),
+        Id: joi.string().custom(
+            (value, helper) => {
+            console.log({ helper });
+            console.log(value);
+            console.log(types.object.isValid(value));
+            return types.object.isValid(value) || helper.message("Ii.valid Object id")
 
-}
+        })
+    }
 
 
 export const validation = (scheme) => {
