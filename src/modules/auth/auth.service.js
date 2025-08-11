@@ -98,65 +98,66 @@ export const signup = asyncHandler(async (req, res, next) => {
 
 
 export const confirmEmail = asyncHandler(async (req, res, next) => {
-  const { email, otp } = req.body;
+    const { email, otp } = req.body;
 
-  const user = await DBservice.findOne({
-    model: userModel,
-    filter: {
-      email,
-      confirmEmail: { $exists: false },  
-      confirmEmailOtp: { $exists: true }
+    const user = await DBservice.findOne({
+        model: userModel,
+        filter: {
+            email,
+            confirmEmail: { $exists: false },
+            confirmEmailOtp: { $exists: true }
+        }
+    });
+
+    if (!user) {
+        return next(new Error("Invalid account or already verified", { cause: 404 }));
     }
-  });
 
-  if (!user) {
-    return next(new Error("Invalid account or already verified", { cause: 404 }));
-  }
+    ////////////   confirm Email only 5 attempts   ////////////////////
+    if (user.confirmEmailBanUntil && user.confirmEmailBanUntil > new Date()) {
+        const remainingMs = user.confirmEmailBanUntil - new Date();
+        const remainingSec = Math.ceil(remainingMs / 1000);
+        return next(new Error(`You are temporarily banned. Try again after ${remainingSec} seconds.`));
+    }
 
-  if (user.confirmEmailBanUntil && user.confirmEmailBanUntil > new Date()) {
-    const remainingMs = user.confirmEmailBanUntil - new Date();
-    const remainingSec = Math.ceil(remainingMs / 1000);
-    return next(new Error(`You are temporarily banned. Try again after ${remainingSec} seconds.`));
-  }
+    if (user.confirmEmailBanUntil && user.confirmEmailBanUntil <= new Date()) {
+        user.failedConfirmEmailAttempts = 0;
+        user.confirmEmailBanUntil = null;
+        await user.save();
+    }
 
-  if (user.confirmEmailBanUntil && user.confirmEmailBanUntil <= new Date()) {
+    const isOtpValid = await compareHash({
+        plaintext: otp,
+        hashValue: user.confirmEmailOtp
+    });
+
+    if (!isOtpValid) {
+        // زيادة العداد
+        user.failedConfirmEmailAttempts += 1;
+
+        // لو وصل 5، نحظر 5 دقايق
+        if (user.failedConfirmEmailAttempts >= 5) {
+            user.confirmEmailBanUntil = new Date(Date.now() + 5 * 60 * 1000);
+        }
+
+        await user.save();
+        return next(new Error("Invalid OTP"));
+    }
+
+    // create data and mack all counter =0
     user.failedConfirmEmailAttempts = 0;
     user.confirmEmailBanUntil = null;
-    await user.save();
-  }
-
-  const isOtpValid = await compareHash({
-    plaintext: otp,
-    hashValue: user.confirmEmailOtp
-  });
-
-  if (!isOtpValid) {
-    // زيادة العداد
-    user.failedConfirmEmailAttempts += 1;
-
-    // لو وصل 5، نحظر 5 دقايق
-    if (user.failedConfirmEmailAttempts >= 5) {
-      user.confirmEmailBanUntil = new Date(Date.now() + 5 * 60 * 1000); // 5 دقائق
-    }
+    user.confirmEmail = new Date();
+    user.confirmEmailOtp = undefined;
 
     await user.save();
-    return next(new Error("Invalid OTP"));
-  }
 
-
-  user.failedConfirmEmailAttempts = 0;
-  user.confirmEmailBanUntil = null;
-  user.confirmEmail = new Date();
-  user.confirmEmailOtp = undefined;
-
-  await user.save();
-
-  return successResponse({
-    res,
-    status: 200,
-    message: "Email confirmed successfully",
-    data: {}
-  });
+    return successResponse({
+        res,
+        status: 200,
+        message: "Email confirmed successfully",
+        data: {}
+    });
 });
 
 
@@ -164,13 +165,13 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
 
 export const login = asyncHandler(async (req, res, next) => {
 
-//  const validationResult = validators.login.validate(req.body, { abortEarly: false })
+    //  const validationResult = validators.login.validate(req.body, { abortEarly: false })
 
-//     return res.json({ validationResult })
-//     if (validationResult.error) {
-//         return res.status(400).json({ validationResult })
+    //     return res.json({ validationResult })
+    //     if (validationResult.error) {
+    //         return res.status(400).json({ validationResult })
 
-//     }
+    //     }
 
     const { email, password } = req.body;
 
