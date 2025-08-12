@@ -54,6 +54,8 @@ const userSchema = new mongoose.Schema({
     confirmEmail: Date,
     confirmEmailOtp: String,
 
+
+    ////////////////////////////////////
     failedConfirmEmailAttempts: {
         type: Number,
         default: 0
@@ -62,8 +64,16 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    ////////////////////////////////////
+
 
     picture: String,
+    deletedAt: Date,
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    restoreAt: Date,
+    restoreBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+
 }, {
     timestamps: true,
     toObject: { virtuals: true },

@@ -83,8 +83,8 @@ export const signup = asyncHandler(async (req, res, next) => {
 //         model: userModel,
 //         filter: { email },
 //         data: {
-//             $set: { confirmEmail: Date.now() },
-//             $unset: { confirmEmailOtp: true },
+//             confirmEmail: { $exists: false },
+//             confirmEmailOtp: { $exists: true }
 //             $inc: { __v: 1 }
 //         }
 
@@ -113,7 +113,7 @@ export const confirmEmail = asyncHandler(async (req, res, next) => {
         return next(new Error("Invalid account or already verified", { cause: 404 }));
     }
 
-    ////////////   confirm Email only 5 attempts   ////////////////////
+    ////////////   confirm Email only 5 attempts   ////////////
     if (user.confirmEmailBanUntil && user.confirmEmailBanUntil > new Date()) {
         const remainingMs = user.confirmEmailBanUntil - new Date();
         const remainingSec = Math.ceil(remainingMs / 1000);
@@ -194,7 +194,7 @@ export const login = asyncHandler(async (req, res, next) => {
 
     }
 
-    console.log("llll");
+    console.log("this is your OTP to confirm Your Mail");
 
     const credentials = await generateLoginCredentials({ user })
 

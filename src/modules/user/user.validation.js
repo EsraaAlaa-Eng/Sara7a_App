@@ -18,3 +18,10 @@ export const updateBasicInfo = {
         gender: generalFields.gender,
     }).required()
 }
+
+
+export const freezeAccount = {
+    body: joi.object().keys({
+       userId:generalFields.Id,
+    }).required()
+}

@@ -10,10 +10,18 @@ const userRouter = Router();
 
 userRouter.get("/", auth({ accessRoles: endPoint.Profile }), userService.Profile);
 userRouter.get("/:userId", userService.shareProfile);
-userRouter.patch("/", 
-    authentication(), 
-    validation(validators.updateBasicInfo), 
+
+userRouter.patch("/",
+    authentication(),
+    validation(validators.updateBasicInfo),
     userService.updateBasicInfo);
+
+userRouter.delete("{/:userId}/freeze-account",    //userid is a option we use it when admin want delete user account
+    authentication(),
+    validation(validators.freezeAccount),
+    userService.freezeAccount
+)
+
 userRouter.get("/refresh-token", authentication({ tokenType: tokenTypeEnum.refresh }), userService.getNewLoginCredentials);
 
 

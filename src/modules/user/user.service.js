@@ -1,7 +1,8 @@
 import { generateEncryption, decryptEncryption } from "../../utils/security/encryption.security.js"
 import { asyncHandler, successResponse } from "../../utils/response.js";
 import * as DBService from '../../DB/db.service.js'
-import { userModel } from "../../DB/models/User.model.js";
+import { roleEnum, userModel } from "../../DB/models/User.model.js";
+// import { confirmEmail } from "../auth/auth.service.js";
 // import { confirmEmail } from "../auth/auth.validation.js";
 
 export const Profile = asyncHandler(
@@ -38,6 +39,35 @@ export const updateBasicInfo = asyncHandler(
   })
 
 
+
+
+export const freezeAccount = asyncHandler(
+  async (req, res, next) => {
+
+
+    const { userId } = req.params;
+    if (userId && req.user.role !== roleEnum.admin) {
+      return next(new Error("Not authorize To delete", { cause: 403 }))
+    }
+    const user = await DBService.findOneAndUpdate({
+      model: userModel,
+      filter: {
+        _id: userId || req.user._id,  //the login user
+        $exists: { confirmEmail: true, deleteAt: false },
+
+
+      },
+      data: {
+        deleteAt: Date.now(),
+        deleteBy: req.user._id,   //the login user
+
+      }
+
+    })
+
+
+    return user ? successResponse({ res, data: { user } }) : next(new Error("In-valid account ", { cause: 404 }))
+  })
 
 
 
