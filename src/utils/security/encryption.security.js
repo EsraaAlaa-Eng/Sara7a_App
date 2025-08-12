@@ -5,5 +5,5 @@ export const generateEncryption = async ({ plaintext = "", secretKey = process.e
 }
 
 export const decryptEncryption = async ({ cipherText = "", secretKey = process.env.ENCRYPTION_SECRET }) => {
-  return CryptoJS.AES.decrypt(cipherText, secretKey), toString(CryptoJS.AES.utf8)
+  return CryptoJS.AES.decrypt(cipherText, secretKey).toString(CryptoJS.AES.utf8)
 }

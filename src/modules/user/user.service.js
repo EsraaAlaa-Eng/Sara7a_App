@@ -1,15 +1,44 @@
-import { generateEncryption } from "../../utils/security/encryption.security.js"
+import { generateEncryption, decryptEncryption } from "../../utils/security/encryption.security.js"
 import { asyncHandler, successResponse } from "../../utils/response.js";
 import * as DBService from '../../DB/db.service.js'
 import { userModel } from "../../DB/models/User.model.js";
-import { confirmEmail } from "../auth/auth.validation.js";
+// import { confirmEmail } from "../auth/auth.validation.js";
 
 export const Profile = asyncHandler(
   async (req, res, next) => {
-    req.user.phone = await generateEncryption({ cipherText: req.user.phone });
-    return successResponse({ res, data: { user: req.user } });
+    const user = req.user;
+
+    user.phone = await decryptEncryption({ cipherText: user.phone });
+
+    return successResponse({ res, data: { user } });
   }
 );
+
+
+
+export const updateBasicInfo = asyncHandler(
+  async (req, res, next) => {
+
+
+    if (req.body.phone) {   //old and new and encryption
+      req.body.phone = await generateEncryption({ plaintext: req.body.phone })
+    }
+
+    const user = await DBService.findOneAndUpdate({
+      model: userModel,
+      filter: {
+        _id: req.user._id, //the login user
+        // confirmEmail: { $exists: true }
+      },
+      data: req.body
+    })
+
+
+    return user ? successResponse({ res, data: { user } }) : next(new Error("In-valid account ", { cause: 404 }))
+  })
+
+
+
 
 
 export const shareProfile = asyncHandler(
@@ -25,6 +54,9 @@ export const shareProfile = asyncHandler(
     return user ? successResponse({ res, data: { user } }) : next(new Error("In-valid account ", { cause: 404 }))
   }
 );
+
+
+
 
 export const getNewLoginCredentials = asyncHandler(
   async (req, res, next) => {

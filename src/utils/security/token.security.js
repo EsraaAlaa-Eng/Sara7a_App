@@ -10,7 +10,7 @@ export const tokenTypeEnum = { access: "Access", refresh: "Refresh" }
 export const generateToken = async ({
   payload = {},
   signature = process.env.SECRET_KEY,
-  option = { expiresIn: 60 * 30 }
+  option = { expiresIn: 12000 }
 } = {}) => {
   return jwt.sign(payload, signature, option);
 };
@@ -53,17 +53,14 @@ export const getSignatures = async ({ signatureLevel = "Bearer" } = {}) => {
 
 
 export const decodedToken = async ({ next, authorization = "", tokenType = tokenTypeEnum.access }) => {
-  console.log("===============================");
   //       const { authorization } = req.headers;  //destruct key named is authorization
 
   // console.log(authorization);
   // console.log(authorization?.split(' '));
 
-  console.log("📥 Raw authorization input:", authorization);
-  console.log("📤 After split:", authorization?.split(' '));
+ 
   const [bearer, token] = authorization?.split(' ') || [];
-  console.log("📛 bearer:", bearer, "🧪 token:", token);
-  console.log("===============================");
+
 
   if (!bearer || !token) {
     return next(new Error('missing token parts', { cause: 401 }));
@@ -113,7 +110,7 @@ export const generateLoginCredentials = async ({ user } = {}) => {
   // refresh Token
   const refreshToken = await generateToken({
     payload: { _id: user._id },
-    secret: signatures.refreshSignature,
+    signature: signatures.refreshSignature,
     option: {
       expiresIn: Number(process.env.TOKEN_EXPIRATION || 1200)
     }

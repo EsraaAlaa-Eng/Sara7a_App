@@ -1,5 +1,6 @@
 import joi from "joi";
 import { asyncHandler } from "../utils/response.js"
+import { genderEnum } from "../DB/models/User.model.js";
 
 export const generalFields = {
 
@@ -13,15 +14,16 @@ export const generalFields = {
     confirmPassword: joi.string().valid(joi.ref("password")),
     phone: joi.string().pattern(new RegExp(/^(002|\+2)?01[0125][0-9]{8}$/)),
     otp: joi.string().pattern(new RegExp(/^\d{6}$/)),
-        Id: joi.string().custom(
-            (value, helper) => {
+    gender: joi.string().valid(...Object.values(genderEnum)),
+    Id: joi.string().custom(
+        (value, helper) => {
             console.log({ helper });
             console.log(value);
             console.log(types.object.isValid(value));
             return types.object.isValid(value) || helper.message("Ii.valid Object id")
 
-        })
-    }
+        }),
+}
 
 
 export const validation = (scheme) => {
