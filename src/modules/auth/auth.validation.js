@@ -1,7 +1,26 @@
 import joi from "joi";
 import { generalFields } from '../../middleware/validation.middleware.js'
-import { IdTokenClient } from "google-auth-library";
 
+export const sendForgotPassword = {
+    body: joi.object().keys({
+        email: generalFields.email.required(),
+
+    })
+}
+export const verifyForgotPassword = {
+    body: sendForgotPassword.body.append({
+        otp: generalFields.otp.required(),
+    }),
+
+}
+
+export const resetPassword = {
+    body: verifyForgotPassword.body.append({
+        password: generalFields.password.required(),
+        confirmPassword: generalFields.confirmPassword.required(),
+    }),
+
+}
 
 export const login = {
     body: joi.object().keys({

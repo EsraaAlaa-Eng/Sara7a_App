@@ -1,4 +1,6 @@
+// import joi from "joi";
 import mongoose from "mongoose";
+import { localFileUpload } from "../../utils/multer/local.multer.js";
 
 export const genderEnum = { male: "male", female: "female" };
 export const roleEnum = { user: "user", admin: "admin" };
@@ -28,14 +30,13 @@ const userSchema = new mongoose.Schema({
             return this.provider === providerEnum.system ? true : false
         },
     },
+
     phone: {
         type: String,
         required: function () {
             return this.provider === providerEnum.system ? true : false
         }
     },
-
-
     gender: {
         type: String,
         enum: { values: Object.values(genderEnum), message: `gender only allow ${Object.values(genderEnum)}` },
@@ -49,10 +50,19 @@ const userSchema = new mongoose.Schema({
 
 
 
+    deletedAt: Date,
+    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
+    restoreAt: Date,
+    restoreBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     provider: { type: String, enum: Object.values(providerEnum), default: providerEnum.system },
     confirmEmail: Date,
     confirmEmailOtp: String,
+    oldPassword: [String],
+    forgotPasswordOtp: [String],
+    picture: { secure_url: String, public_id: String },
+    coverImage: [{ secure_url: String, public_id: String }],
+    changeCredentialsTime: Date,
 
 
     ////////////////////////////////////
@@ -67,12 +77,8 @@ const userSchema = new mongoose.Schema({
     ////////////////////////////////////
 
 
-    picture: String,
-    deletedAt: Date,
-    deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
-    restoreAt: Date,
-    restoreBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+
 
 }, {
     timestamps: true,
@@ -88,6 +94,12 @@ userSchema.virtual("fullName")
         return this.firstName + " " + this.lastName;
     })
 
+userSchema.virtual("message", {
+    localField: "_id",
+    foreignField: "receiverId",
+    ref: "Message"
+
+})
 // safety! cheka 
 export const userModel = mongoose.models.User || mongoose.model("User", userSchema)
 // synchronize any index change or amendment

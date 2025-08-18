@@ -5,5 +5,5 @@ export const generateHash = async ({ plaintext = "", salt = process.env.SALT } =
 };
 
 export const compareHash= async ({ plaintext = "", hashValue="" } = {}) => {
-    return  bcrypt.compareSync(plaintext, hashValue);
+    return bcrypt.compareSync(String(plaintext), String(hashValue));
 };

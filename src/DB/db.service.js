@@ -40,3 +40,10 @@ export const findOneAndUpdate = async ({
 
 }
 
+export const deleteOne = async ({
+    model,
+    filter = {},
+} = {}) => {
+    return await model.deleteOne(  filter )
+
+}

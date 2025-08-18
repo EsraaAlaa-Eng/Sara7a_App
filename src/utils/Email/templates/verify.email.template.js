@@ -1,4 +1,4 @@
-export const verifyEmailTemplate = (otp, title = "Confirm Email") => {
+export const verifyEmailTemplate = ({otp, title = "Confirm Email"}) => {
     return `<!DOCTYPE html>
 <html>
 <head>

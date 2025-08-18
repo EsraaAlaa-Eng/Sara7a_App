@@ -1,5 +1,9 @@
 import { roleEnum } from "../../DB/models/User.model.js";
 
 export const endPoint = {
-    Profile: [roleEnum.admin, roleEnum.user]
+    Profile: [roleEnum.admin, roleEnum.user],
+    restoreAccount: [roleEnum.admin],
+    deleteAccount: [roleEnum.admin]
+
+
 }

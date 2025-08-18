@@ -4,10 +4,11 @@ import * as DBservice from '../../DB/db.service.js';
 import { generateEncryption } from "../../utils/security/encryption.security.js";
 import { generateHash, compareHash } from "../../utils/security/hash.security.js";
 import jwt from 'jsonwebtoken';
-import { generateLoginCredentials, generateToken, getSignatures, signatureLevelEnum } from "../../utils/security/token.security.js";
+import { generateLoginCredentials } from "../../utils/security/token.security.js";
 import { OAuth2Client } from 'google-auth-library';
 import { emailEvent } from "../../utils/event/email.event.js";
 import { customAlphabet } from 'nanoid';
+import { token } from "morgan";
 // import * as validators from './auth.validation.js'
 
 
@@ -24,7 +25,7 @@ export const signup = asyncHandler(async (req, res, next) => {
 
     const { fullName, email, password, phone } = req.body;
 
-    console.log({ fullName, email, password, phone });
+    // console.log({ fullName, email, password, phone });
 
 
     if (await DBservice.findOne({ model: userModel, filter: { email } })) {
@@ -194,29 +195,120 @@ export const login = asyncHandler(async (req, res, next) => {
 
     }
 
-    console.log("this is your OTP to confirm Your Mail");
+    // console.log("this is your OTP to confirm Your Mail");
 
-    const credentials = await generateLoginCredentials({ user })
-
+    const credentials = await generateLoginCredentials({ user })   //token
+   
 
 
     return successResponse({
         res,
         status: 200,
-        data: ({ user, data: { credentials } })
+        data: { token: credentials }
     });
 });
 
 
-async function verifyGoogleAccount({ idToken } = {}) {
-    const client = new OAuth2Client();
-    const ticket = await client.verifyIdToken({
-        idToken,
-        audience: process.env.WEB_CLIENT_IDS.split(","),
+
+
+
+export const sendForgotPassword = asyncHandler(
+    async (req, res, next) => {
+        const { email } = req.body
+        const otp = customAlphabet("0123456789", 6)()
+        const user = await DBservice.findOneAndUpdate({
+            model: userModel,
+            filter: {
+                email,
+                confirmEmail: { $exists: true },
+                deletedAt: { $exists: false },
+                provider: providerEnum.system
+            },
+            data: {
+                forgotPasswordOtp: await generateHash({ plaintext: otp })
+            }
+        })
+
+        if (!user) {
+            return next(new Error("In-valid account", { cause: 404 }))
+        }
+        emailEvent.emit("sendForgotPassword", { to: email, subject: "Forgot password", title: "Reset-password", otp })
+        return successResponse({ res })
+    }
+)
+
+
+
+
+export const verifyForgotPassword = asyncHandler(
+    async (req, res, next) => {
+        const { email, otp } = req.body
+        const user = await DBservice.findOne({
+            model: userModel,
+            filter: {
+                email,
+                confirmEmail: { $exists: true },
+                deletedAt: { $exists: false },
+                forgotPasswordOtp: { $exists: true },
+                provider: providerEnum.system
+            }
+        })
+
+        if (!user) {
+            return next(new Error("In-valid account", { cause: 404 }))
+        }
+
+        if (!await compareHash({ plaintext: otp, hashValue: user.forgotPasswordOtp })) {
+            return next(new Error("In-valid otp", { cause: 400 }))
+        }
+
+        return successResponse({ res })
+    }
+)
+
+
+
+
+export const resetPassword = asyncHandler(
+    async (req, res, next) => {
+
+
+        const { email, otp, password } = req.body;
+        const user = await DBservice.findOne({
+            model: userModel,
+            filter: {
+                email,
+                confirmEmail: { $exists: true },
+                deletedAt: { $exists: false },
+                forgotPasswordOtp: { $exists: true },
+                provider: providerEnum.system  /////Q
+            },
+
+        })
+
+        if (!user) {
+            return next(new Error("In-valid account", { cause: 404 }))
+        }
+        if (!await compareHash({ plaintext: otp, hashValue: user.forgotPasswordOtp })) {
+            return next(new Error("In-valid otp", { cause: 400 }))
+
+        }
+        await DBservice.updateOne({
+            model: userModel,
+            filter: {
+                email
+            },
+            data: {
+                password: await generateHash({ plaintext: password })
+            }
+        })
+
+        return successResponse({ res })
+
     });
-    const payload = ticket.getPayload();
-    return payload
-}
+
+
+
 
 
 
@@ -224,7 +316,7 @@ export const signupWithGmail = asyncHandler(
     async (req, res, next) => {
         const { idToken } = req.body;
         const { picture, name, email, email_verified } = await verifyGoogleAccount({ idToken })
-        console.log({ picture, name, email, email_verified });
+        // console.log({ picture, name, email, email_verified });
 
         if (!email_verified) {
             return next(new Error("not verified account ", { cause: 400 }))
@@ -260,7 +352,7 @@ export const signupWithGmail = asyncHandler(
             }]
 
         })
-        console.log({ newUser });
+        // console.log({ newUser });
 
         // console.log(JSON.stringify(newUser, null, 2));
 

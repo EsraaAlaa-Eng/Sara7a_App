@@ -5,8 +5,10 @@ export const authentication = ({ tokenType = tokenTypeEnum.access } = {}) => {
     return asyncHandler(
         async (req, res, next) => {
 
-            console.log(req.headers.authorization); 
-            req.user = await decodedToken({ next, authorization: req.headers.authorization, tokenType })
+            // console.log(req.headers.authorization); 
+            const { user, decoded } = await decodedToken({ next, authorization: req.headers.authorization, tokenType }) || {};
+            req.user = user;
+            req.decoded = decoded;
             return next()
 
         }
@@ -21,7 +23,7 @@ export const authorization = ({ accessRoles = [] } = {}) => {
     //مين الي مسموحله يعدي 
     return asyncHandler(
         async (req, res, next) => {
-            console.log({ accessRoles, currentRole: req.user.role, match: accessRoles.includes(req.user.role) });
+            // console.log({ accessRoles, currentRole: req.user.role, match: accessRoles.includes(req.user.role) });
 
             if (!accessRoles.includes(req.user.role)) {
                 return next(new Error("Not authorization account"), { cause: 403 })
@@ -40,9 +42,10 @@ export const authorization = ({ accessRoles = [] } = {}) => {
 export const auth = ({ tokenType = tokenTypeEnum.access, accessRoles } = {}) => {
     return asyncHandler(
         async (req, res, next) => { //authentication 1
-            req.user = await decodedToken({ next, authorization: req.headers.authorization, tokenType })
-        //     console.log({ accessRoles, currentRole: req.user.role, match: accessRoles.includes(req.user.role)}
-        // )
+            const { user, decoded } = await decodedToken({ next, authorization: req.headers.authorization, tokenType }) || {};
+            req.user = user;
+            req.decoded = decoded;
+            // console.log({ accessRoles, currentRole: req.user.role, match: accessRoles.includes(req.user.role) } )
 
 
             // authorization 2 
@@ -52,5 +55,5 @@ export const auth = ({ tokenType = tokenTypeEnum.access, accessRoles } = {}) => 
             return next()
 
         })
- 
+
 }
