@@ -83,7 +83,7 @@ const bootStrap = async () => {
     // convert buffer data
     app.use(express.json())
     // app-routing
-    app.get('/', (req, res, next) => res.send('Hello world'))
+app.get('/', (req, res) => {  res.json({ message: "Welcome to app ❤️"})});
     app.use("/auth", authController)
     app.use("/user", userController)
     app.use("/message", messageController)
