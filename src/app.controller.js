@@ -5,18 +5,48 @@ import connectDB from "./DB/connection.db.js";
 import authController from "./modules/auth/auth.controller.js";
 import userController from "./modules/user/user.controller.js";
 import messageController from "./modules/message/message.controller.js";
-import { globalErrorHandling } from "./utils/response.js";
+import { asyncHandler, globalErrorHandling } from "./utils/response.js";
 import cors from 'cors';    //signup with gmail  allow access from any where
 import { sendEmail } from './utils/Email/send.email.js';
 import morgan from 'morgan';
 import helmet from 'helmet';
-import {rateLimit} from 'express-rate-limit'
+import { rateLimit } from 'express-rate-limit'
 import chalk from 'chalk';
+import cron from "node-cron";
+import { MessageModel } from "./DB/models/Message.model.js";
+import { TokenModel } from "./DB/models/token.model.js";
+
+
 dotenv.config({});
 
 const bootStrap = async () => {
     const app = express()
     const port = process.env.PORT;
+
+
+
+
+    // cronJobs.js
+    const startCronJobs = asyncHandler(async () => {
+        cron.schedule("0 0 * * 0 ", asyncHandler(async () => {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+
+            const result = await MessageModel.deleteMany({
+                createdAt: { $lt: weekAgo }
+            });
+
+            const tokenResult = await TokenModel.deleteMany({
+                createdAt: { $lte: weekAgo },
+            });
+
+            console.log(
+                `CronJob: ${result.deletedCount} old messages & ${tokenResult.deletedCount} tokens deleted (older than one week)`
+            );
+        }));
+    });
+
+    await startCronJobs();
 
 
 
@@ -36,13 +66,13 @@ const bootStrap = async () => {
     app.use(cors())
     app.use(morgan('dev'))
     app.use(helmet())
-  
 
-    const limiter =rateLimit({
-        windowMs:60*60*1000, //1min
-        limit:20000,
+
+    const limiter = rateLimit({
+        windowMs: 60 * 60 * 1000, //1min
+        limit: 20000,
         // legacyHeaders:false
-        standardHeaders:'draft-8'
+        standardHeaders: 'draft-8'
 
     })
     app.use(limiter)
@@ -70,7 +100,7 @@ const bootStrap = async () => {
 
 
 
-    return app.listen(port, () => console.log(chalk.bgYellow(chalk.black(`app run on port ${ port} !`))));
+    return app.listen(port, () => console.log(chalk.bgYellow(chalk.black(`app run on port ${port} !`))));
 
 
 }
