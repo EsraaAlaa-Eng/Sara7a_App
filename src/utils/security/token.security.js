@@ -12,7 +12,7 @@ export const logoutEnum = { signoutFromAll: "signoutFromAll", signout: "signout"
 
 export const generateToken = async ({
   payload = {},
-  signature = process.env.SECRET_KEY,
+  signature = process.env.ACCESS_USER_TOKEN_SIGNATURE,
   option = { expiresIn: 12000 }
 } = {}) => {
   return jwt.sign(payload, signature, option);
@@ -22,7 +22,7 @@ export const generateToken = async ({
 
 export const verifyToken = async ({
   token = "",
-  signature = process.env.SECRET_KEY,
+  signature = process.env.ACCESS_USER_TOKEN_SIGNATURE,
 } = {}) => {
   // console.log({ token, signature });
 
@@ -56,10 +56,7 @@ export const getSignatures = async ({ signatureLevel = "Bearer" } = {}) => {
 
 
 export const decodedToken = async ({ next, authorization = "", tokenType = tokenTypeEnum.access }) => {
-  //       const { authorization } = req.headers;  //destruct key named is authorization
 
-  // console.log(authorization);
-  // console.log(authorization?.split(' '));
 
 
   const [bearer, token] = authorization?.split(' ') || [];
@@ -68,10 +65,13 @@ export const decodedToken = async ({ next, authorization = "", tokenType = token
   if (!bearer || !token) {
     return next(new Error('missing token parts', { cause: 401 }));
   }
-  const signatures = await getSignatures({ signatureLevel: bearer })
+  let signature = await getSignatures({ signatureLevel: bearer })
+
+  const secret = tokenType === tokenTypeEnum.refresh ? signature.refreshSignature : signature.accessSignature;
+
   const decoded = await verifyToken({
     token,
-    signature: tokenType === tokenTypeEnum.access ? signatures.accessSignature : signatures.refreshSignature
+    secret,
   })
   // console.log(decoded);
 
@@ -126,7 +126,7 @@ export const generateLoginCredentials = async ({ user } = {}) => {
     signature: signatures.refreshSignature,
     option: {
       jwtid,
-      expiresIn: Number(process.env.TOKEN_EXPIRATION || 1200)
+      expiresIn: Number(process.env.ACCESS_TOKEN_EXPIRES_IN)
     }
   })
   return { accessToken, refreshToken }

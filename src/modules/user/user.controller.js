@@ -16,7 +16,7 @@ const userRouter = Router(
 
 
 userRouter.post("/logout", authentication(), userService.logOut);
-userRouter.get("/", validation(validators.logOut), userService.Profile);
+userRouter.get('/', authentication(), validation(validators.logOut), userService.Profile)
 userRouter.get("/:userId", userService.shareProfile);
 
 userRouter.patch("/",
