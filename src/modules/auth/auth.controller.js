@@ -12,7 +12,6 @@ router.post("/login", validation(validators.login), authService.login);
 router.post('/refresh-token', authService.refreshToken);
 router.patch('/confirm-email', validation(validators.confirmEmail), authService.confirmEmail);
 router.post("/signup/gmail", validation(validators.loginWithGmail), authService.signupWithGmail);
-// router.patch("/updatePassword", authService.updatePassword); 
 router.patch('/send-forgot-password', validation(validators.sendForgotPassword), authService.sendForgotPassword);
 router.patch('/verify-forgot-password', validation(validators.verifyForgotPassword), authService.verifyForgotPassword);
 

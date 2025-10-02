@@ -58,7 +58,7 @@ export const confirmEmail = {
 
 export const loginWithGmail = {
     body: joi.object().keys({
-        IdToken: joi.string().required(),
+        idToken: joi.string().required(),
 
     }),
 

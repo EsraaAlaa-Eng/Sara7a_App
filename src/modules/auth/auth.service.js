@@ -5,12 +5,11 @@ import { generateEncryption } from "../../utils/security/encryption.security.js"
 import { generateHash, compareHash } from "../../utils/security/hash.security.js";
 import jwt from 'jsonwebtoken';
 import { generateLoginCredentials } from "../../utils/security/token.security.js";
-import { OAuth2Client } from 'google-auth-library';
+import { OAuth2Client } from "google-auth-library";
 import { emailEvent } from "../../utils/event/email.event.js";
 import { customAlphabet } from 'nanoid';
 import { token } from "morgan";
-// import * as validators from './auth.validation.js'
-
+const client = new OAuth2Client();
 
 
 export const signup = asyncHandler(async (req, res, next) => {
@@ -198,7 +197,7 @@ export const login = asyncHandler(async (req, res, next) => {
     // console.log("this is your OTP to confirm Your Mail");
 
     const credentials = await generateLoginCredentials({ user })   //token
-   
+
 
 
     return successResponse({
@@ -310,59 +309,47 @@ export const resetPassword = asyncHandler(
 
 
 
+async function verifyGoogleAccount({ idToken } = {}) {
 
-
-export const signupWithGmail = asyncHandler(
-    async (req, res, next) => {
-        const { idToken } = req.body;
-        const { picture, name, email, email_verified } = await verifyGoogleAccount({ idToken })
-        // console.log({ picture, name, email, email_verified });
-
-        if (!email_verified) {
-            return next(new Error("not verified account ", { cause: 400 }))
-        }
-
-        const user = await DBservice.findOne({
-            model: userModel,
-            filter: { email }
-        })
-
-        if (user) {
-            if (user.provider === providerEnum.google) {
-                //////////////////////////Q////////////////////////////
-                const credentials = await generateLoginCredentials({ user })
-                successResponse({ res, status: 200, data: { credentials } })
-
-            }
-
-        }
-
-
-
-
-        const [newUser] = await DBservice.create({
-
-            model: userModel,
-            data: [{
-                fullName: name,
-                email,
-                picture,
-                confirmEmail: Date.now(),
-                provider: providerEnum.google
-            }]
-
-        })
-        // console.log({ newUser });
-
-        // console.log(JSON.stringify(newUser, null, 2));
-
-        const credentials = await generateLoginCredentials({ user: newUser })
-
-        return successResponse({ res, status: 201, data: { credentials } });
-
-
-
+    const ticket = await client.verifyIdToken({
+        idToken,
+        audience: process.env.WEB_CLIENT_ID.split(','),
     });
+    const payload = ticket.getPayload();
+    return payload
+
+}
+
+
+export const signupWithGmail = asyncHandler(async (req, res, next) => {
+    const { idToken } = req.body
+    const { name, email, email_verified, picture } = await verifyGoogleAccount({ idToken })
+    if (!email_verified) {
+        return next(new Error('not verified account', { cause: 400 }))
+    }
+    const user = await DBService.findOne({ model: userModel, filter: { email } })
+    if (user) {
+        if (user.provider === providerEnum.google) {
+            const credentials = await getLoginCredentials(user)
+            return successResponse({ res, data: { credentials } })
+            //  return loginWithGmail(req ,res,next)
+        }
+        return next(new Error('email exist', { cause: 404 }))
+    }
+    const [newUser] = await DBService.create({
+        model: userModel, data: [{
+            fullName: name,
+            email: email,
+            picture,
+            confirmEmail: Date.now(),
+            provider: providerEnum.google
+        }]
+    })
+
+    return successResponse({ res, status: 201, data: { user: newUser._id } })
+
+
+})
 
 
 ///////////////////////////////Q/////////////////////////////////////
